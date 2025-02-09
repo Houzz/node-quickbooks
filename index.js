@@ -10,11 +10,13 @@ var request   = require('request'),
     uuid      = require('uuid'),
     debug     = require('request-debug'),
     util      = require('util'),
+    logOpts = { showHidden: false, depth: null },
     formatISO = require('date-fns/fp/formatISO'),
     _         = require('underscore'),
     Promise   = require('bluebird'),
     version   = require('./package.json').version,
     xmlParser = new (require('fast-xml-parser').XMLParser)();
+
 
 module.exports = QuickBooks
 
@@ -207,7 +209,23 @@ QuickBooks.prototype.getUserInfo = function(callback) {
  * @param  {function} callback - Callback function which is called with any error and list of BatchItemResponses
  */
 QuickBooks.prototype.batch = function(items, callback) {
-  module.request(this, 'post', {url: '/batch'}, {BatchItemRequest: items}, callback)
+  var entity = {BatchItemRequest: items};
+  // not assuming all items have url params, if we find one, we'll add them
+  var itemWithUrlParams = items.find(i => i.Item && i.Item.addUrlParams);
+
+  if (itemWithUrlParams) {
+    entity.addUrlParams = itemWithUrlParams.Item.addUrlParams;
+
+    items.forEach(i => {
+      try {
+        delete i.Item.addUrlParams  
+      } catch (error) {
+        // ignore
+      }
+    });
+  }
+
+  module.request(this, 'post', {url: '/batch'}, entity , callback);
 }
 
 /**
@@ -2452,7 +2470,7 @@ module.update = function(context, entityName, entity, callback, opts = {}) {
       _.isEmpty(entity.SyncToken + '')) {
     if (entityName !== 'exchangerate') {
       throw new Error(entityName + ' must contain Id and SyncToken fields: ' +
-          util.inspect(entity, {showHidden: false, depth: null}))
+          util.inspect(entity, logOpts))
     }
   }
   if (! entity.hasOwnProperty('sparse')) {
