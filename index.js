@@ -10,13 +10,12 @@ var request   = require('request'),
     uuid      = require('uuid'),
     debug     = require('request-debug'),
     util      = require('util'),
+    logOpts = { showHidden: false, depth: null },
     formatISO = require('date-fns/fp/formatISO'),
     _         = require('underscore'),
     Promise   = require('bluebird'),
     version   = require('./package.json').version,
-    xmlParser = new (require('fast-xml-parser').XMLParser)(),
-    util = require('util'),
-    logOpts = { showHidden: false, depth: null, colors: true };
+    xmlParser = new (require('fast-xml-parser').XMLParser)();
 
 
 module.exports = QuickBooks
@@ -2471,7 +2470,7 @@ module.update = function(context, entityName, entity, callback, opts = {}) {
       _.isEmpty(entity.SyncToken + '')) {
     if (entityName !== 'exchangerate') {
       throw new Error(entityName + ' must contain Id and SyncToken fields: ' +
-          util.inspect(entity, {showHidden: false, depth: null}))
+          util.inspect(entity, logOpts))
     }
   }
   if (! entity.hasOwnProperty('sparse')) {
